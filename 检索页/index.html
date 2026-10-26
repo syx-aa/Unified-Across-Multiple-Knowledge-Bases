@@ -1,0 +1,1583 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>知识库 · 智能问答</title>
+<style>
+  :root{
+    --bg:#060f1e; --panel:#0c1e3a; --panel2:#102647;
+    --line:#1d3a61; --line2:#2b5285;
+    --txt:#e9f0fa; --dim:#93aacb; --dim2:#6d89ad;
+    --gold:#e5b955; --gold2:#f7d98a;
+    --note:#4d9ef7; --entity:#e5b955; --concept:#58c7c7;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    min-height:100vh;color:var(--txt);
+    font:15px/1.75 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    background:
+      radial-gradient(900px 480px at 50% -14%,#143a6e 0%,rgba(10,28,58,0) 62%),
+      var(--bg);
+    background-attachment:fixed;
+  }
+  ::selection{background:rgba(229,185,85,.3)}
+
+  .app{max-width:880px;margin:0 auto;padding:54px 22px 96px}
+
+  /* ---------- 顶部 ---------- */
+  .top{display:flex;flex-direction:column;align-items:center;gap:7px;margin-bottom:26px}
+  .brand{display:flex;align-items:center;gap:11px}
+  .ball{
+    width:32px;height:32px;border-radius:50%;flex:none;
+    background:radial-gradient(circle at 32% 28%,#fff 0%,#e8cf8a 42%,#c79a34 100%);
+    box-shadow:0 0 0 1px rgba(229,185,85,.5),0 4px 18px rgba(229,185,85,.26);
+    display:grid;place-items:center;font-size:16px
+  }
+  h1{
+    margin:0;font-size:18px;font-weight:700;letter-spacing:.4px;
+    background:linear-gradient(92deg,#fff 0%,var(--gold2) 58%,var(--gold) 100%);
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent
+  }
+  .stat{font-size:12px;color:var(--dim2);letter-spacing:.4px}
+
+  /* ---------- 提问框 ---------- */
+  .ask{position:relative;display:flex;align-items:center;margin-bottom:14px}
+  .ask .ic{position:absolute;left:16px;font-size:15px;color:var(--dim);pointer-events:none}
+  .ask input{
+    flex:1;height:54px;border-radius:14px;padding:0 100px 0 44px;
+    background:var(--panel);border:1px solid var(--line2);color:var(--txt);
+    font-size:15.5px;font-family:inherit;outline:none;transition:.16s
+  }
+  .ask input::placeholder{color:var(--dim2)}
+  .ask input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(229,185,85,.13);background:var(--panel2)}
+  .ask button{
+    position:absolute;right:7px;height:40px;padding:0 21px;border-radius:10px;border:0;cursor:pointer;
+    font-family:inherit;font-size:14px;font-weight:600;color:#1b1204;
+    background:linear-gradient(180deg,var(--gold2),var(--gold));transition:.15s
+  }
+  .ask button:hover{filter:brightness(1.07)}
+  .ask button:active{transform:translateY(1px)}
+
+  /* ---------- 模式切换 ---------- */
+  .libs{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+  .liblabel{font-size:12px;color:var(--dim2)}
+  .libbox{display:flex;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:4px}
+  .lib{
+    border:0;background:transparent;color:var(--dim);font-family:inherit;font-size:13px;
+    padding:7px 16px;border-radius:7px;cursor:pointer;transition:.15s;white-space:nowrap
+  }
+  .lib:hover{color:var(--txt);background:rgba(255,255,255,.05)}
+  .lib.on{background:linear-gradient(180deg,rgba(229,185,85,.24),rgba(229,185,85,.12));color:var(--gold2);box-shadow:inset 0 0 0 1px rgba(229,185,85,.35)}
+  .modes{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:28px}
+  .modebox{display:flex;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:4px}
+  .mode{
+    border:0;background:transparent;color:var(--dim);font-family:inherit;font-size:13px;
+    padding:7px 16px;border-radius:7px;cursor:pointer;transition:.15s;white-space:nowrap
+  }
+  .mode:hover{color:var(--txt);background:rgba(255,255,255,.05)}
+  .mode.on{background:linear-gradient(180deg,rgba(229,185,85,.24),rgba(229,185,85,.12));color:var(--gold2);box-shadow:inset 0 0 0 1px rgba(229,185,85,.35)}
+  .hint{font-size:12px;color:var(--dim2)}
+
+  /* ---------- 答案卡 ---------- */
+  .card{
+    background:linear-gradient(180deg,var(--panel2),var(--panel));
+    border:1px solid var(--line);border-radius:14px;padding:22px 24px 20px;
+    animation:rise .3s ease both
+  }
+  @keyframes rise{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
+  .kicker{font-size:11px;letter-spacing:1.6px;color:var(--gold);font-weight:700;margin-bottom:13px}
+  .kicker .note{margin-left:9px;font-size:10.5px;letter-spacing:.5px;color:var(--dim2);font-weight:500}
+
+  .lead{margin:0 0 15px;font-size:15.5px;line-height:1.92;color:#eef4ff;word-break:break-word}
+  .pts{margin:0;padding:0;list-style:none}
+  .pts li{
+    position:relative;padding-left:19px;margin-bottom:10px;font-size:14.4px;line-height:1.88;
+    color:#c9daf0;word-break:break-word
+  }
+  .pts li:last-child{margin-bottom:0}
+  .pts li::before{
+    content:"";position:absolute;left:3px;top:.76em;width:6px;height:6px;border-radius:50%;
+    background:var(--gold);opacity:.62
+  }
+
+  /* ---------- 参考来源 ---------- */
+  .srcs{margin-top:20px;padding-top:15px;border-top:1px solid var(--line)}
+  .srcs-h{font-size:11px;letter-spacing:1.4px;color:var(--dim2);font-weight:600;margin-bottom:9px}
+  .srcwrap{margin-bottom:5px}
+  .src{display:flex;align-items:center;gap:10px;padding:8px 11px;border-radius:9px;cursor:pointer;transition:.14s;border:1px solid transparent}
+  .src:hover{background:rgba(255,255,255,.045);border-color:var(--line)}
+  .src .st{flex:1;font-size:13.4px;color:#cbd9ec;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .src .ar{color:var(--dim2);font-size:13px;transition:.2s;flex:none}
+  .srcwrap.open .ar{transform:rotate(90deg);color:var(--gold)}
+  .exc{
+    margin:6px 0 10px;padding:13px 15px;background:rgba(5,14,29,.55);
+    border:1px solid var(--line);border-radius:10px;font-size:13.2px;line-height:1.85;color:#b8cbe3
+  }
+  .tag{font-size:11px;padding:2px 8px;border-radius:20px;border:1px solid;line-height:1.5;flex:none}
+  .tag.k-note{color:var(--note);border-color:rgba(77,158,247,.4);background:rgba(77,158,247,.10)}
+  .tag.k-entity{color:var(--entity);border-color:rgba(229,185,85,.4);background:rgba(229,185,85,.10)}
+  .tag.k-concept{color:var(--concept);border-color:rgba(88,199,199,.4);background:rgba(88,199,199,.10)}
+  .src .sim{display:flex;align-items:center;gap:7px;flex:none}
+  .sim-b{width:42px;height:4px;border-radius:2px;background:rgba(255,255,255,.10);overflow:hidden}
+  .sim-b i{display:block;height:100%;border-radius:2px;background:currentColor}
+  .sim-n{font-size:11.5px;min-width:34px;text-align:right;font-variant-numeric:tabular-nums}
+  .sim.s-hi{color:var(--gold)} .sim.s-hi .sim-n{color:var(--gold)}
+  .sim.s-mid{color:var(--note)} .sim.s-mid .sim-n{color:var(--note)}
+  .sim.s-lo{color:var(--dim2)} .sim.s-lo .sim-n{color:var(--dim2)}
+
+  /* ---------- 检索过程 ---------- */
+  .trace{
+    margin-bottom:14px;background:rgba(9,22,44,.62);
+    border:1px solid var(--line);border-radius:12px;overflow:hidden;
+    animation:rise .3s ease both
+  }
+  .trace-h{
+    display:flex;align-items:center;gap:9px;padding:10px 14px;cursor:pointer;
+    font-size:11px;letter-spacing:1.4px;color:var(--dim2);font-weight:600;user-select:none
+  }
+  .trace-h:hover{color:var(--dim)}
+  .trace-h .tnum{margin-left:auto;letter-spacing:.2px;font-weight:500;font-size:11px;color:var(--dim2)}
+  .trace-h .chev{font-size:11px;color:var(--dim2);transition:.2s;flex:none}
+  .trace.closed .trace-b{display:none}
+  .trace.closed .chev{transform:rotate(-90deg)}
+  .trace-b{padding:4px 14px 11px;border-top:1px solid rgba(29,58,97,.75)}
+  .tstep{display:flex;gap:10px;align-items:flex-start;padding:5px 0}
+  .tstep .no{
+    flex:none;width:18px;height:18px;border-radius:50%;margin-top:1px;
+    display:grid;place-items:center;font-size:10.5px;font-weight:700;
+    background:rgba(229,185,85,.14);color:var(--gold);border:1px solid rgba(229,185,85,.34)
+  }
+  .tstep .tt{flex:none;width:76px;font-size:12.5px;font-weight:600;color:var(--txt)}
+  .tstep .tms{flex:none;font-size:11px;font-weight:500;color:var(--dim2);font-variant-numeric:tabular-nums;letter-spacing:.2px;white-space:nowrap}
+  .tstep .td{flex:1;font-size:12.3px;color:var(--dim);line-height:1.7;word-break:break-word}
+  .tstep .td b{color:var(--gold2);font-weight:600}
+  .tstep.run .no{background:rgba(77,158,247,.16);color:var(--note);border-color:rgba(77,158,247,.45)}
+  .tstep.run .tt{color:var(--note)}
+  .tstep.bad .no{background:rgba(247,185,185,.12);color:#f7b9b9;border-color:rgba(247,185,185,.35)}
+  .tstep.bad .tt{color:#f7b9b9}
+
+  mark{background:rgba(229,185,85,.28);color:var(--gold2);border-radius:3px;padding:0 2px}
+  .caret{display:inline-block;width:7px;height:1em;vertical-align:-2px;margin-left:3px;
+    background:var(--gold);border-radius:1px;animation:blink 1.05s steps(2,start) infinite}
+  @keyframes blink{50%{opacity:0}}
+  .err{color:#f7b9b9}
+
+  /* ---------- 首屏 ---------- */
+  .try{display:flex;gap:8px;flex-wrap:wrap}
+  .trybtn{
+    font-family:inherit;font-size:13px;padding:8px 15px;border-radius:20px;
+    border:1px solid var(--line2);background:rgba(255,255,255,.03);color:var(--dim);
+    cursor:pointer;transition:.14s
+  }
+  .trybtn:hover{border-color:var(--gold);color:var(--gold2);background:rgba(229,185,85,.12)}
+
+  .empty .lead{color:var(--dim);font-size:14.6px}
+  .empty .lead b{color:var(--gold2);font-weight:600}
+
+  /* ---------- 检索自检 ---------- */
+  .statrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center}
+  .chkbtn{
+    font-family:inherit;font-size:11.5px;letter-spacing:.3px;padding:4px 12px;border-radius:20px;
+    border:1px solid var(--line2);background:rgba(255,255,255,.03);color:var(--dim);
+    cursor:pointer;transition:.14s;white-space:nowrap
+  }
+  .chkbtn:hover{border-color:var(--gold);color:var(--gold2);background:rgba(229,185,85,.12)}
+  .chkbtn.on{border-color:var(--gold);color:var(--gold2);background:rgba(229,185,85,.16)}
+
+  .chk{
+    margin-bottom:26px;background:linear-gradient(180deg,var(--panel2),var(--panel));
+    border:1px solid var(--line);border-radius:14px;padding:18px 20px 16px;animation:rise .28s ease both
+  }
+  .chk-h{display:flex;align-items:center;gap:10px;margin-bottom:5px}
+  .chk-h .kicker{margin:0}
+  .chk-x{
+    margin-left:auto;border:0;background:transparent;color:var(--dim2);font-family:inherit;
+    font-size:12px;cursor:pointer;padding:2px 4px;transition:.14s
+  }
+  .chk-x:hover{color:var(--txt)}
+  .chk-sub{font-size:12.4px;color:var(--dim2);line-height:1.7;margin-bottom:15px}
+  .chk-sub b{color:var(--dim);font-weight:600}
+  .chk-prog{height:3px;border-radius:2px;background:rgba(255,255,255,.09);overflow:hidden;margin-bottom:13px}
+  .chk-prog i{display:block;height:100%;width:0;background:var(--gold);transition:width .1s linear}
+  .chk-tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
+  .tile{background:rgba(5,14,29,.5);border:1px solid var(--line);border-radius:11px;padding:11px 12px 9px}
+  .tile .tn{font-size:10.5px;letter-spacing:1.1px;color:var(--dim2);font-weight:600}
+  .tile .tv{font-size:22px;font-weight:700;color:var(--gold2);font-variant-numeric:tabular-nums;line-height:1.35;margin-top:2px}
+  .tile .tx{font-size:10.5px;color:var(--dim2);line-height:1.5}
+  .chk-sec{font-size:11px;letter-spacing:1.4px;color:var(--dim2);font-weight:600;margin:17px 0 8px}
+  .chk-tbl{width:100%;border-collapse:collapse;font-size:12.6px}
+  .chk-tbl th{
+    text-align:right;font-weight:600;color:var(--dim2);font-size:11px;letter-spacing:.6px;
+    padding:5px 7px;border-bottom:1px solid var(--line)
+  }
+  .chk-tbl th:first-child{text-align:left}
+  .chk-tbl td{
+    padding:6px 7px;border-bottom:1px solid rgba(29,58,97,.5);color:#c9daf0;
+    text-align:right;font-variant-numeric:tabular-nums
+  }
+  .chk-tbl td:first-child{text-align:left;color:var(--txt)}
+  .chk-tbl tr:last-child td{border-bottom:0;font-weight:600;color:var(--gold2)}
+  .chk-fails{display:flex;flex-direction:column;gap:7px}
+  .fail{background:rgba(5,14,29,.5);border:1px solid var(--line);border-radius:9px;padding:9px 12px;font-size:12.4px;line-height:1.65}
+  .fail .fq{color:#dbe6f6}
+  .fail .fm{color:var(--dim2);font-size:11.7px;margin-top:3px}
+  .fail .fm b{color:var(--dim);font-weight:600}
+  .chk-foot{margin-top:15px;font-size:11.5px;color:var(--dim2);line-height:1.75}
+  .chk-foot b{color:var(--dim);font-weight:600}
+  .chk-empty{font-size:13px;color:var(--dim);line-height:1.75}
+  .chk-empty b{color:var(--gold2);font-weight:600}
+
+  @media(max-width:640px){
+    .app{padding:34px 14px 70px}
+    .ask input{height:50px;font-size:15px;padding-right:92px}
+    .ask button{height:38px;padding:0 16px}
+    .card{padding:18px 16px 16px}
+    h1{font-size:16.5px}
+    .tstep .tt{width:62px;font-size:12px}
+    .tstep .td{font-size:12px}
+    .trace-h .tnum{display:none}
+    .chk{padding:15px 14px 13px}
+    .chk-tiles{grid-template-columns:repeat(2,1fr)}
+    .chk-tbl{font-size:11.8px}
+    .chk-tbl th,.chk-tbl td{padding:5px 3px}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <span class="ball">⚽</span>
+      <h1>知识库 · 智能问答</h1>
+    </div>
+    <div class="statrow">
+      <span class="stat" id="stat"></span>
+      <button type="button" class="chkbtn" id="chkBtn"
+              title="用 120 道标注题跑一遍检索，量化当前检索效果">检索自检</button>
+    </div>
+  </header>
+
+  <form class="ask" id="askForm" autocomplete="off">
+    <span class="ic">🔍</span>
+    <input id="q" type="search" spellcheck="false"
+           placeholder="问点什么…  例如：阿根廷 26 人大名单都有谁？" />
+    <button type="submit">提问</button>
+  </form>
+
+  <div class="libs" id="libs" hidden>
+    <span class="liblabel">知识库</span>
+    <div class="libbox" id="libbox"></div>
+  </div>
+
+  <div class="modes">
+    <div class="modebox" id="modes">
+      <button type="button" class="mode on" data-mode="all">智能</button>
+      <button type="button" class="mode" data-mode="keyword">关键词</button>
+      <button type="button" class="mode" data-mode="entity">实体</button>
+    </div>
+    <span class="hint" id="hint">关键词 + 实体 两路合并</span>
+    <span class="hint" id="ai"></span>
+  </div>
+
+  <section class="chk" id="chk" hidden aria-live="polite"></section>
+
+  <main id="out"></main>
+</div>
+
+<script src="eval_cases.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tencent-ai/workbuddy-cloud-sdk@dev/lib/index.global.js"></script>
+<script>
+window.__KB_START__ = function(){
+  "use strict";
+
+  var OUT = document.getElementById('out');
+  var input = document.getElementById('q');
+
+  if(!window.WIKI_DATA){
+    OUT.innerHTML = '<div class="card empty"><div class="kicker">数据缺失</div>' +
+      '<p class="lead">未找到 <b>data.js</b>，请先运行 <b>build/build_data.py</b> 生成数据，' +
+      '并确保它与本页面在同一目录。</p></div>';
+    return;
+  }
+
+  var D = window.WIKI_DATA;
+  var docs = D.docs;
+  var N = docs.length;
+  var IDX = {}, TITLE_IDX = {};
+  docs.forEach(function(d,i){ IDX[d.id]=i; if(TITLE_IDX[d.title]==null) TITLE_IDX[d.title]=i; });
+
+  var KIND_NAME = {note:'笔记', entity:'实体', concept:'概念'};
+  var HINT = {
+    all:'关键词 + 实体 两路合并',
+    keyword:'只按字面关键词匹配（BM25）',
+    entity:'只查词条名与别名（cr7 → C罗）'
+  };
+  var EXAMPLES = [
+    '阿根廷 26 人大名单都有谁？',
+    '2026 世界杯夺冠热门有哪些？',
+    '央视拿下转播权花了多少钱？',
+    '梅西',
+    '小组赛赛程怎么安排？'
+  ];
+
+  var state = { q:'', mode:'all', lastTerms:[], db:'' };
+  /* 当前库优先取 URL 的 ?db= —— 切换库是带参数重载页面的，
+     若不先取，loadLibs() 会用服务端返回的默认库覆盖掉它，
+     导致数据已切到新库、切换器选中态却还停在旧库。 */
+  try { state.db = new URLSearchParams(location.search).get('db') || ''; } catch(e){}
+
+  /* ======================= 文本工具 ======================= */
+  function esc(s){
+    return String(s).replace(/[&<>"]/g, function(c){
+      return c==='&'?'&amp;':c==='<'?'&lt;':c==='>'?'&gt;':'&quot;'; });
+  }
+  function escRe(s){ return String(s).replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
+
+  // [[A|B]] -> B；[[A]] -> A；去 ** 与列表前缀
+  function plainText(s){
+    return String(s)
+      .replace(/\[\[([^\[\]]+?)\]\]/g, function(m,g){ var p=g.split('|'); return p[1]||p[0]; })
+      .replace(/\*\*/g,'')
+      .replace(/^[ \t]*[-*][ \t]+/gm,'');
+  }
+
+  /* chunk 的正文：跳过与上一块重复的前 ov 字（SPEC-015 二次切分的重叠）。
+     重叠只服务于向量语义完整，拼接正文时必须去掉，否则重复内容会
+     抬高 BM25 词频、并白占喂给大模型的上下文预算。 */
+  function chunkText(c){
+    return plainText(c.ov ? c.r.slice(c.ov) : c.r);
+  }
+
+  // 中文 bigram + 英文数字词
+  function tokens(s){
+    s = String(s).toLowerCase();
+    var out = [], m;
+    var reEn = /[a-z0-9]+/g;
+    while((m = reEn.exec(s))) out.push(m[0]);
+    var reCn = /[\u4e00-\u9fa5]+/g;
+    while((m = reCn.exec(s))){
+      var seg = m[0];
+      if(seg.length === 1) out.push(seg);
+      else for(var i=0;i<seg.length-1;i++) out.push(seg.substr(i,2));
+    }
+    return out;
+  }
+
+  // 去掉句首的播报者标签（解说员配音：/ 旁白：…），保留内容
+  function tidy(s){
+    return String(s)
+      .replace(/^(?:(?:解说员|解说|旁白|配音|记者|主持人)\s*){1,3}(?:[（(][^）)]{0,16}[)）]\s*)?[：:]\s*/,'')
+      .trim();
+  }
+
+  // 一段文本切成"信息单元"（行 + 句）
+  function sentenceUnits(raw){
+    var out = [];
+    plainText(raw).split('\n').forEach(function(line){
+      var s = line.replace(/^#{1,6}\s*/,'').trim();
+      if(!s) return;
+      var buf = '';
+      for(var i=0;i<s.length;i++){
+        var ch = s.charAt(i); buf += ch;
+        if('。！？!?；;'.indexOf(ch) >= 0){ out.push(tidy(buf)); buf=''; }
+      }
+      if(buf.trim()) out.push(tidy(buf));
+    });
+    return out.filter(function(x){
+      if(x.length < 6) return false;
+      if(/[：:]$/.test(x) && x.length < 26) return false;   // 纯小标题
+      return /[\u4e00-\u9fa5a-zA-Z0-9]/.test(x);
+    });
+  }
+
+  /* ======================= 倒排索引 ======================= */
+  var postings = new Map();
+  var docLen = new Array(N);
+
+  (function buildIndex(){
+    for(var i=0;i<N;i++){
+      var d = docs[i];
+      var buf = d.title + ' ' + d.title + ' ' + d.title;   // 标题加权 ×3
+      for(var k=0;k<d.chunks.length;k++) buf += ' ' + chunkText(d.chunks[k]);
+      if(d.links && d.links.length) buf += ' ' + d.links.join(' ');
+      var toks = tokens(buf);
+      docLen[i] = toks.length || 1;
+      var tf = new Map();
+      for(var j=0;j<toks.length;j++){ var t=toks[j]; tf.set(t,(tf.get(t)||0)+1); }
+      tf.forEach(function(c,t){
+        var p = postings.get(t);
+        if(!p){ p = new Map(); postings.set(t,p); }
+        p.set(i,c);
+      });
+    }
+  })();
+
+  var avgdl = 0;
+  for(var z=0;z<N;z++) avgdl += docLen[z];
+  avgdl = avgdl / N || 1;
+
+  var BM25_K1 = 1.5, BM25_B = 0.75;
+
+  function bm25(qtoks){
+    var sc = new Map();
+    var uniq = {};
+    for(var i=0;i<qtoks.length;i++) uniq[qtoks[i]] = 1;
+    Object.keys(uniq).forEach(function(t){
+      var p = postings.get(t); if(!p) return;
+      var df = p.size;
+      var idf = Math.log(1 + (N - df + 0.5) / (df + 0.5));
+      p.forEach(function(tf,di){
+        var s = idf * (tf*(BM25_K1+1)) / (tf + BM25_K1*(1 - BM25_B + BM25_B*docLen[di]/avgdl));
+        sc.set(di, (sc.get(di)||0) + s);
+      });
+    });
+    return sc;
+  }
+
+  /* ======================= 实体路 ======================= */
+  function termMatch(ql, term){
+    var t = String(term).toLowerCase();
+    if(!t) return false;
+    if(/^[a-z0-9 ._\-]+$/.test(t)){
+      return new RegExp('(^|[^a-z0-9])' + escRe(t) + '($|[^a-z0-9])').test(ql);
+    }
+    return ql.indexOf(t) >= 0;
+  }
+
+  function entityPath(q){
+    var ql = q.toLowerCase();
+    var qc = q.replace(/\s/g, '');
+    var hit = [], seen = {}, exact = new Map();
+    Object.keys(D.terms).forEach(function(name){
+      if(termMatch(ql, name) && !seen[name]){ seen[name]=1; hit.push(name); }
+    });
+    Object.keys(D.aliases).forEach(function(a){
+      var target = D.aliases[a];
+      if(termMatch(ql, a) && !seen[target]){ seen[target]=1; hit.push(target); }
+    });
+    var sc = new Map();
+    hit.forEach(function(name){
+      var info = D.terms[name]; if(!info) return;
+      var di = IDX[info.id];
+      if(di != null){
+        sc.set(di, Math.max(sc.get(di)||0, 1));
+        if(qc.length - name.length <= 2) exact.set(di, true);   // 查询基本就是这个词条
+      }
+      var refs = info.refs || [];
+      for(var i=0;i<refs.length;i++){
+        var rdi = TITLE_IDX[refs[i]];
+        if(rdi != null) sc.set(rdi, Math.max(sc.get(rdi)||0, 0.55));
+      }
+    });
+    return { scores: sc, terms: hit, exact: exact };
+  }
+
+  /* ======================= 检索 ======================= */
+  function nowMs(){ return (window.performance && performance.now) ? performance.now() : Date.now(); }
+  function fmt2(v){ return (Math.round((v || 0) * 100) / 100).toFixed(2); }
+  /* 智能单位：>=1s 显示秒，否则毫秒 —— 各步耗时差异大（分词 1ms / 重排 ~9s） */
+  function fmtMs(ms){ if(ms == null || ms === undefined) return ''; return ms >= 1000 ? (ms/1000).toFixed(1) + ' s' : Math.round(ms) + ' ms'; }
+  var MODE_NAME = { all:'智能融合', keyword:'关键词', entity:'实体' };
+
+  function retrieve(q, mode){
+    var t0 = nowMs();
+    var qtoks = tokens(q);
+    var kwRaw = bm25(qtoks);
+    var ent = entityPath(q);
+    var entRaw = ent.scores;
+
+    var kwMax = 0; kwRaw.forEach(function(v){ if(v>kwMax) kwMax=v; });
+    var entMax = 0; entRaw.forEach(function(v){ if(v>entMax) entMax=v; });
+    var kwTop = kwMax, entTop = entMax;
+    kwMax = kwMax || 1; entMax = entMax || 1;
+
+    var all = new Set();
+    kwRaw.forEach(function(v,k){ all.add(k); });
+    entRaw.forEach(function(v,k){ all.add(k); });
+
+    var rows = [];
+    all.forEach(function(di){
+      var k = (kwRaw.get(di)||0) / kwMax;
+      var e = (entRaw.get(di)||0) / entMax;
+      var s;
+      if(mode === 'keyword') s = k;
+      else if(mode === 'entity') s = e;
+      else {
+        s = 0.60*k + 0.40*e;
+        if(ent.exact.get(di)) s = Math.max(s, 0.88);
+      }
+      if(s <= 0) return;
+      rows.push({ di:di, score:s, k:k, e:e });
+    });
+    rows.sort(function(a,b){ return b.score - a.score; });
+
+    var ms = Math.round((nowMs() - t0) * 10) / 10;
+
+    var trace = [
+      { t:'分词',
+        d: qtoks.length
+          ? '规则切分（中文相邻二字 + 英文数字词）→ <b>' + qtoks.length + '</b> 个词元：' +
+            esc(qtoks.slice(0, 12).join(' · ')) + (qtoks.length > 12 ? ' …' : '')
+          : '没有切出可用词元' },
+      { t:'关键词路',
+        d: kwRaw.size
+          ? '查倒排索引（标题权重 ×3）→ 命中 <b>' + kwRaw.size + '</b> 篇 · BM25 最高原始分 <b>' + fmt2(kwTop) + '</b>'
+          : '倒排索引未命中任何文档' },
+      { t:'实体路',
+        d: ent.terms.length
+          ? '查词条名 + 别名表 → 命中 <b>' + esc(ent.terms.join('、')) + '</b> · 带出文档 <b>' + entRaw.size + '</b> 篇' +
+            (ent.exact.size ? '（其中 <b>' + ent.exact.size + '</b> 篇为精确命中）' : '')
+          : '词条名与别名都没命中' },
+      { t:'归一化融合',
+        d: '两路各自除以本路最高分，再按 <b>0.6 × 关键词 + 0.4 × 实体</b>（' + MODE_NAME[mode] +
+           '）加权 → 得到 <b>' + rows.length + '</b> 篇候选' }
+    ];
+
+    return { rows:rows, terms:ent.terms, exact:ent.exact, trace:trace, ms:ms };
+  }
+
+  /* ======================= 答案生成 ======================= */
+  function buildTerms(q, hitTerms){
+    var arr = [q].concat(q.split(/[\s,，。？?！!、；;：:]+/));
+    (hitTerms||[]).forEach(function(t){ arr.push(t); });
+    var seen = {}, res = [];
+    arr.forEach(function(s){
+      s = (s||'').trim();
+      if(s.length >= 2 && !seen[s]){ seen[s]=1; res.push(s); }
+    });
+    return res.sort(function(a,b){ return b.length - a.length; });
+  }
+
+  function countIn(hay, needle){
+    var c = 0, p = 0;
+    while((p = hay.indexOf(needle, p)) >= 0){ c++; p += needle.length; }
+    return c;
+  }
+
+  function sentScore(sent, qterms, qgrams){
+    var low = sent.toLowerCase(), sc = 0, i;
+    for(i=0;i<qterms.length;i++){
+      var t = qterms[i].toLowerCase();
+      if(t.length < 2) continue;
+      var c = countIn(low, t);
+      if(c) sc += Math.min(c,3) * (1 + t.length/6);
+    }
+    for(i=0;i<qgrams.length;i++){
+      if(countIn(low, qgrams[i])) sc += 0.35;
+    }
+    return sc;
+  }
+
+  function isSimilar(a, b){
+    if(a === b) return true;
+    var short = a.length < b.length ? a : b;
+    var long  = a.length < b.length ? b : a;
+    return short.length >= 8 && long.indexOf(short) >= 0;
+  }
+
+  function pickPoints(rows, qterms, qgrams, limit){
+    var cands = [];
+    rows.slice(0, 8).forEach(function(row, rank){
+      var d = docs[row.di];
+      if(d.kind !== 'note') return;
+      d.chunks.forEach(function(c){
+        sentenceUnits(c.r).forEach(function(u){
+          var sc = sentScore(u, qterms, qgrams);
+          if(sc <= 0.5) return;
+          sc += (c.s === 'key' ? 0.9 : 0.3) + Math.max(0, 6 - rank) * 0.6;
+          cands.push({ t:u, sc:sc, di:row.di, i:c.i, rank:rank });
+        });
+      });
+    });
+    cands.sort(function(a,b){ return b.sc - a.sc; });
+
+    var picked = [], i;
+    for(i=0;i<cands.length && picked.length<limit;i++){
+      var c = cands[i], dup = false;
+      for(var j=0;j<picked.length;j++){ if(isSimilar(picked[j].t, c.t)){ dup = true; break; } }
+      if(dup) continue;
+      picked.push(c);
+    }
+
+    // 兜底：一个都没抽到 → 拿最相关笔记的关键要点开头
+    if(!picked.length && rows.length){
+      var top = docs[rows[0].di];
+      if(top.kind === 'note'){
+        var units = [];
+        top.chunks.forEach(function(c){
+          if(units.length >= 3 || c.s !== 'key') return;
+          units = units.concat(sentenceUnits(c.r).slice(0, 2));
+        });
+        if(!units.length) top.chunks.forEach(function(c){
+          if(units.length < 3) units = units.concat(sentenceUnits(c.r).slice(0, 2));
+        });
+        picked = units.slice(0,3).map(function(t,i){ return { t:t, di:rows[0].di, i:i, rank:0 }; });
+      }
+    }
+
+    picked.sort(function(a,b){ return (a.rank - b.rank) || (a.i - b.i); });
+    return picked.slice(0, limit);
+  }
+
+  function pickSources(rows, primary, limit){
+    var out = [], seen = {}, smap = {};
+    rows.forEach(function(r){ if(smap[r.di] == null) smap[r.di] = r.score; });
+    function push(di){
+      var d = docs[di];
+      if(!d || seen[d.id]) return;
+      seen[d.id] = 1;
+      out.push({
+        di:di, title:d.title, kind:d.kind, cat:d.cat,
+        score:(smap[di] != null ? smap[di] : 0)
+      });
+    }
+    if(primary) push(IDX[primary.id]);
+    rows.forEach(function(r){ if(out.length < limit + 2) push(r.di); });
+    out.sort(function(a,b){
+      if(b.score !== a.score) return b.score - a.score;          // 相似度高的在前
+      return (a.kind === 'note' ? 0 : 1) - (b.kind === 'note' ? 0 : 1);
+    });
+    return out.slice(0, limit);
+  }
+
+  // 噪声闸门：别让一个常见二字组带出一堆不相关内容
+  function isRelevant(q, res){
+    if(res.terms.length) return true;                        // 命中了词条/别名，直接算相关
+    var seen = {}, grams = [];
+    tokens(q).forEach(function(t){
+      if(t.length >= 2 && !seen[t]){ seen[t] = 1; grams.push(t); }
+    });
+    if(!grams.length) return false;
+    var top = res.rows[0].di, have = 0;
+    for(var i=0;i<grams.length;i++){
+      var p = postings.get(grams[i]);
+      if(p && p.has(top)) have++;
+    }
+    return have >= Math.min(2, grams.length);
+  }
+
+  /* ======================= 服务端检索（P3） ======================= */
+  /* 探测同源 FastAPI 服务：可用则检索走服务端（BM25+实体+向量+重排），
+   * 不可达（file:// 打开 / 静态部署 / 服务未启动）自动回退内置 BM25 检索，不报错 */
+  var SERVER = { ready: false, base: '', rerank: false };
+  (function probeServer(){
+    var m = (typeof location !== 'undefined') ? /[?&]server=([^&]+)/.exec(location.search) : null;
+    if(m) SERVER.base = decodeURIComponent(m[1]);
+    if(typeof fetch === 'undefined') return;
+    var ctrl = new AbortController();
+    var timer = setTimeout(function(){ ctrl.abort(); }, 2500);
+    fetch(SERVER.base + '/api/health', { signal: ctrl.signal })
+      .then(function(r){ return r.json(); })
+      .then(function(h){
+        clearTimeout(timer);
+        if(h && h.ok && h.engine === 'server'){
+          SERVER.ready = true;
+          var hasRR = !!(h.models && h.models.reranker);
+          SERVER.rerank = hasRR;      // 自检面板要据此标注当前链路形态
+          var hint = document.getElementById('hint');
+          if(hint) hint.textContent = '服务端检索：BM25 + 实体 + 向量' +
+            (hasRR ? ' + 重排' : '（轻量部署，重排停用）') + ' · FastAPI';
+          loadLibs();                  // 连上服务端后再取可用知识库清单
+        }
+      })
+      .catch(function(){ clearTimeout(timer); });
+  })();
+
+  /* ---------- 知识库切换（SPEC-033） ---------- */
+  /* 库清单由 /api/databases 提供；服务端不可达时不显示切换器（无库可切） */
+  var LIBS = [];
+  var LIB_LABELS = {
+    worldcup: '世界杯',
+    xiaohongshu: '小红书AI帖子',
+    enterprise: '企业内部项目文档'
+  };
+
+  function currentLib(){ return state.db || (LIBS[0] && LIBS[0].key) || ''; }
+
+  function renderLibs(){
+    var box = document.getElementById('libbox');
+    var wrap = document.getElementById('libs');
+    if(!box || !wrap) return;
+    if(LIBS.length < 2){ wrap.hidden = true; return; }   // 只有一个库就不显示
+    wrap.hidden = false;
+    var cur = currentLib();
+    box.innerHTML = LIBS.map(function(it){
+      return '<button type="button" class="lib' + (it.key === cur ? ' on' : '') +
+             '" data-db="' + esc(it.key) + '">' + esc(LIB_LABELS[it.key] || it.key) + '</button>';
+    }).join('');
+  }
+
+  /* 切换知识库 → 清空当前问答，避免上一个库的答案残留在界面上（Q4）。
+     换库必须换数据文件：docs / terms / meta（含示例问题）都跟着走，
+     因此用带 ?db= 的 URL 重新载入页面（file:// 双击打开同样有效）。 */
+  function switchLib(key){
+    if(key === currentLib()) return;
+    state.db = key;
+    renderLibs();
+    var inp = document.getElementById('q');
+    if(inp) inp.value = '';
+    state.q = '';
+    renderIdle();
+    try{
+      var base = String(location.href || '').split('?')[0];
+      var next = base + '?db=' + encodeURIComponent(key);
+      if(next !== String(location.href || '')) location.href = next;
+    }catch(e){}
+  }
+
+  function loadLibs(){
+    if(!SERVER.ready || typeof fetch === 'undefined') return;
+    fetch(SERVER.base + '/api/databases')
+      .then(function(r){ return r.json(); })
+      .then(function(j){
+        if(!j || !j.ok) return;
+        LIBS = j.items || [];
+        /* state.db 已在启动时取自 URL；只有它为空或不在清单里
+           （手输 / 失效链接）才回落到服务端默认库。 */
+        var valid = LIBS.some(function(it){ return it.key === state.db; });
+        if(!valid) state.db = j.current || (LIBS[0] && LIBS[0].key) || '';
+        renderLibs();
+      })
+      .catch(function(){});
+  }
+
+  /* 逐行读取 NDJSON：每解析出一行就回调一次 —— 用于把检索步骤实时推到界面 */
+  function ndjson(res, onEvent){
+    var reader = res.body.getReader();
+    var dec = (typeof TextDecoder !== 'undefined') ? new TextDecoder('utf-8') : null;
+    var buf = '';
+    function push(raw){
+      raw = raw.trim();
+      if(!raw) return;
+      try{ onEvent(JSON.parse(raw)); }catch(e){}
+    }
+    return (function pump(){
+      return reader.read().then(function(r){
+        if(r.done){ push(buf); return; }
+        buf += dec ? dec.decode(r.value, {stream:true}) : String(r.value);
+        var lines = buf.split('\n');
+        buf = lines.pop();
+        lines.forEach(push);
+        return pump();
+      });
+    })();
+  }
+
+  /* 服务端检索：逐步接收，每来一步通过 onStep 回调刷新界面（SPEC-032） */
+  function composeAnswerServer(q, onStep, db){
+    var acc = [], done = null;
+    var url = SERVER.base + '/api/search/stream?q=' + encodeURIComponent(q) +
+              (db ? ('&db=' + encodeURIComponent(db)) : '');
+    return fetch(url)
+      .then(function(r){
+        if(!r || !r.ok) throw new Error('bad response');
+        if(!r.body || !r.body.getReader) throw new Error('no stream');
+        return ndjson(r, function(ev){
+          if(ev.type === 'step'){
+            acc.push(ev.step);
+            if(onStep) onStep(acc.slice());      // 传副本，避免外部改动累积数组
+          } else if(ev.type === 'done'){
+            done = ev;
+          } else if(ev.type === 'error'){
+            throw new Error(ev.msg || 'stream error');
+          }
+        });
+      })
+      .then(function(){
+        if(!done) throw new Error('no result');
+        return buildAns(q, 'all', {
+          rows: done.rows || [],
+          terms: done.terms || [],
+          exact: new Map((done.exact || []).map(function(di){ return [di, true]; })),
+          trace: acc.slice(),
+          ms: done.ms
+        });
+      })
+      .catch(function(){
+        SERVER.ready = false;                    // 流不可用/服务挂掉 → 本次起回退本地
+        var hint = document.getElementById('hint');
+        if(hint) hint.textContent = '服务端检索不可达，已回退内置 BM25';
+        return composeAnswer(q, 'all');
+      });
+  }
+
+  function composeAnswer(q, mode){
+    var res = retrieve(q, mode);
+    return buildAns(q, mode, res);
+  }
+
+  function buildAns(q, mode, res){
+    var rows = res.rows;
+    var trace = res.trace;
+    var hitTerms = res.terms || [];
+    var qterms = buildTerms(q, hitTerms);
+    var qgrams = tokens(q).filter(function(t){ return t.length === 2; });
+
+    var relevant = rows.length > 0 && isRelevant(q, res);
+    trace.push({
+      t:'相关度闸门',
+      d: relevant
+        ? (hitTerms.length
+            ? '通过 —— 命中词条/别名「' + esc(hitTerms.join('、')) + '」，直接判定为相关'
+            : '通过 —— 问题词元在首位文档中覆盖 ≥ 2 个，判定为相关')
+        : (rows.length ? '未通过 —— 问题词元在首位文档中覆盖不足 2 个，按噪声丢弃，不生成答案'
+                       : '未通过 —— 一条候选文档都没有'),
+      bad: !relevant
+    });
+
+    if(!relevant){
+      return { empty:true, q:q, mode:mode, hitTerms:hitTerms, terms:qterms,
+               trace:trace, ms:res.ms };
+    }
+
+    var primary = null, i;
+    for(i=0;i<rows.length;i++){
+      var d = docs[rows[i].di];
+      if(d.kind !== 'note' && res.exact.get(rows[i].di)){ primary = d; break; }
+    }
+
+    var lead;
+    if(primary){
+      lead = '「' + primary.title + '」';
+      lead += primary.desc ? '：' + primary.desc + '。' : '是知识库中的一个词条。';
+      var nref = (primary.refs || []).length;
+      if(nref) lead += '库中有 ' + nref + ' 篇笔记与之相关。';
+    } else {
+      var nNote = rows.filter(function(r){ return docs[r.di].kind === 'note'; }).length || rows.length;
+      lead = '关于「' + q + '」，知识库中匹配到 ' + nNote + ' 篇相关笔记，要点如下：';
+    }
+
+    var points = pickPoints(rows, qterms, qgrams, 5);
+    var sources = pickSources(rows, primary, 3);
+
+    trace.push({
+      t:'取料',
+      d: '取前 <b>' + Math.min(rows.length, 6) + '</b> 篇（总长 ≤ 6200 字）拼成上下文交给大模型 · 页面标注来源 <b>' + sources.length + '</b> 条'
+    });
+
+    return {
+      empty:false, q:q, mode:mode, lead:lead, points:points, sources:sources,
+      terms:qterms, hitTerms:hitTerms, total:rows.length, rows:rows,
+      trace:trace, ms:res.ms
+    };
+  }
+
+  /* ======================= 渲染 ======================= */
+  function highlight(text, terms){
+    text = String(text);
+    if(!terms || !terms.length) return esc(text);
+    var pat = terms.filter(function(t){ return t.length>=2; }).map(escRe).join('|');
+    if(!pat) return esc(text);
+    var re;
+    try { re = new RegExp('(' + pat + ')', 'gi'); } catch(e){ return esc(text); }
+    var out = '', last = 0, m;
+    while((m = re.exec(text)) !== null){
+      out += esc(text.slice(last, m.index)) + '<mark>' + esc(m[0]) + '</mark>';
+      last = m.index + m[0].length;
+      if(m.index === re.lastIndex) re.lastIndex++;
+    }
+    return out + esc(text.slice(last));
+  }
+
+  function excerptHtml(di){
+    var d = docs[di], txt;
+    if(d.kind === 'note'){
+      txt = d.chunks.map(chunkText).join('\n');
+    } else {
+      txt = (d.desc ? d.desc + '\n' : '') +
+            (d.refs && d.refs.length ? '关联笔记：' + d.refs.join('、') : '');
+    }
+    if(txt.length > 700) txt = txt.slice(0, 700) + '…';
+    return txt.split('\n').map(function(line){
+      return line.trim() ? highlight(line, state.lastTerms) : '';
+    }).filter(Boolean).join('<br>');
+  }
+
+  function renderIdle(){
+    /* 示例问题取自当前知识库的 meta.examples（由该库的 examples.txt 生成）；
+       老数据没有这个字段时回落到内置的 EXAMPLES（SPEC-034）。 */
+    var ex = (D.meta && D.meta.examples && D.meta.examples.length) ? D.meta.examples : EXAMPLES;
+    OUT.innerHTML = '<div class="card">' +
+      '<div class="kicker">可以这样问</div>' +
+      '<div class="try">' + ex.map(function(s){
+        return '<button type="button" class="trybtn" data-try="' + esc(s) + '">' + esc(s) + '</button>';
+      }).join('') + '</div></div>';
+  }
+
+  /* 服务端检索是异步的（三路 + 重排，本地约 10 秒）。发起请求前必须先给出
+     反馈，否则这段时间页面停在上一轮结果上，看起来就是卡死（SPEC-031）。 */
+  function renderSearching(q){
+    OUT.innerHTML =
+      '<div class="card">' +
+        '<div class="kicker">✦ 检索中<span class="note" id="genNote">服务端 BM25 + 实体 + 向量 + 重排</span></div>' +
+        '<div class="lead" style="color:var(--dim)">正在检索「' + esc(q) + '」的资料，请稍候…</div>' +
+      '</div>';
+  }
+
+  function renderEmpty(ans){
+    var why = ans.mode === 'entity'
+      ? '当前是<b>实体</b>模式，只查词条名与别名'
+      : (ans.mode === 'keyword' ? '当前是<b>关键词</b>模式' : '');
+    OUT.innerHTML = traceHtml(ans.trace, ans.ms, '未生成 —— 检索阶段已被闸门拦下', 'bad') +
+      '<div class="card empty">' +
+      '<div class="kicker">没有找到</div>' +
+      '<p class="lead">「' + esc(ans.q) + '」在知识库里没有匹配到内容' +
+      (why ? '（' + why + '）' : '') + '。<br>换个说法，或切换到「智能」模式再试。</p></div>';
+  }
+
+  // 检索得分(0~1，已按本次查询归一) → 相似度百分比
+  function simPct(score){
+    var p = Math.round((score || 0) * 100);
+    return Math.max(1, Math.min(100, p));
+  }
+
+  function sourcesHtml(sources){
+    if(!sources || !sources.length) return '';
+    var h = '<div class="srcs"><div class="srcs-h">参考来源 · ' + sources.length + '</div>';
+    sources.forEach(function(s, i){
+      var pct = simPct(s.score);
+      var tier = pct >= 70 ? 's-hi' : (pct >= 40 ? 's-mid' : 's-lo');
+      h += '<div class="srcwrap" data-i="' + i + '">' +
+        '<div class="src" data-di="' + s.di + '">' +
+          '<span class="tag k-' + s.kind + '">' + KIND_NAME[s.kind] + '</span>' +
+          '<span class="st">' + esc(s.title) + '</span>' +
+          '<span class="sim ' + tier + '" title="检索相似度 ' + pct + '%">' +
+            '<span class="sim-b"><i style="width:' + pct + '%"></i></span>' +
+            '<span class="sim-n">' + pct + '%</span>' +
+          '</span>' +
+          '<span class="ar">›</span>' +
+        '</div>' +
+        '<div class="exc" hidden></div>' +
+      '</div>';
+    });
+    return h + '</div>';
+  }
+
+  function traceHtml(trace, ms, genText, genCls){
+    if(!trace || !trace.length) return '';
+    var total = trace.length + (genText ? 1 : 0);
+    var h = '<div class="trace" id="traceBox">' +
+      '<div class="trace-h" id="traceHead">检索过程' +
+        '<span class="tnum">' + ((ms === null || ms === undefined)
+          ? '已进行 ' + trace.length + ' 步…'
+          : '共 ' + total + ' 步 · 检索耗时 ' + fmtMs(ms)) + '</span>' +
+        '<span class="chev">▾</span>' +
+      '</div><div class="trace-b">';
+    trace.forEach(function(s, i){
+      h += '<div class="tstep' + (s.bad ? ' bad' : '') + '">' +
+        '<span class="no">' + (i + 1) + '</span>' +
+        '<span class="tt">' + esc(s.t) + '</span>' +
+        (s.ms != null ? '<span class="tms">用时 ' + fmtMs(s.ms) + '</span>' : '') +
+        '<span class="td">' + s.d + '</span></div>';
+    });
+    if(genText){
+      h += '<div class="tstep' + (genCls ? ' ' + genCls : '') + '" id="trGen">' +
+        '<span class="no">' + (trace.length + 1) + '</span>' +
+        '<span class="tt">生成</span>' +
+        '<span class="td" id="trGenD">' + genText + '</span></div>';
+    }
+    return h + '</div></div>';
+  }
+
+  function markGen(cls){
+    var g = document.getElementById('trGen');
+    if(!g) return;
+    g.classList.remove('run');
+    g.classList.remove('bad');
+    if(cls) g.classList.add(cls);
+  }
+
+  function renderAnswer(ans, reason){
+    var note = reason
+      ? '本地知识库摘要 · 大模型未启用（' + esc(reason) + '）'
+      : '本地知识库摘要生成';
+    var gen = reason
+      ? '回退本地摘要，未调用大模型（' + esc(reason) + '）'
+      : '本地摘要生成，未调用大模型';
+    var h = traceHtml(ans.trace, ans.ms, gen, '') + '<div class="card">';
+    h += '<div class="kicker">✦ 回答<span class="note">' + note + '</span></div>';
+    h += '<p class="lead">' + highlight(ans.lead, ans.terms) + '</p>';
+
+    if(ans.points.length){
+      h += '<ul class="pts">' + ans.points.map(function(p){
+        return '<li>' + highlight(p.t, ans.terms) + '</li>';
+      }).join('') + '</ul>';
+    }
+    h += sourcesHtml(ans.sources);
+    OUT.innerHTML = h + '</div>';
+  }
+
+  function ask(){
+    var q = input.value.trim();
+    state.q = q;
+    var seq = ++REQ;                 // 本次提问的唯一序号
+    if(busy){ try{ busy.abort(); }catch(e){} busy = null; }
+    if(!q){ renderIdle(); return; }
+
+    if(SERVER.ready && state.mode === 'all'){
+      renderSearching(q);                          // 先给反馈：服务端检索要等几秒
+      composeAnswerServer(q, function(steps){
+        if(seq !== REQ) return;                    // 已被新提问取代 → 停止刷新
+        OUT.innerHTML = traceHtml(steps, null, '检索中…', 'run');
+      }, state.db).then(function(ans){
+        if(seq !== REQ) return;      // 已被更新的提问取代 → 丢弃，不渲染
+        handleAnswer(q, ans, seq);   // 服务端：BM25+实体+向量+重排
+      });
+    } else {
+      handleAnswer(q, composeAnswer(q, state.mode), seq);  // 本地：BM25+实体
+    }
+  }
+
+  function handleAnswer(q, ans, seq){
+    if(seq !== undefined && seq !== REQ) return;   // 过期请求：静默丢弃，不写 DOM
+    state.lastTerms = ans.terms || [];
+    if(ans.empty){ renderEmpty(ans); return; }
+
+    if(CLOUD && MODEL && MODEL_STATE === 'ready'){
+      streamAnswer(q, ans, seq);     // 大模型作答
+    } else {
+      renderAnswer(ans);             // 大模型不可用 → 本地摘要
+    }
+  }
+
+  /* ======================= 云服务 · 大模型 ======================= */
+  // 仅使用云服务返回的公开配置（endpoint / publishableKey 无权限，可随前端发布）
+  var PUBLIC_CONFIG = {
+    endpoint: 'https://worldcup-qa.app.workbuddy.host',
+    oauthRelayBaseUrl: 'https://www.workbuddy.cn/v2/as/genie-baas/oauth',
+    publishableKey: 'wbpk_pG8XenfRmDD41KjXaItJFl_SaCVAkl61nV7DtWBtTiiMhjTdq82IETs'
+  };
+
+  var SYSTEM_PROMPT =
+    '你是知识库的问答助手，只能依据用户给出的【知识库资料】作答，' +
+    '绝不编造资料中没有的事实。要求：' +
+    '1) 用简体中文，直接回答问题本身，不要复述或罗列资料原文；' +
+    '2) 简洁，通常 2~5 句；若问题需要列举（名单、赛程、分组等），用简短条目；' +
+    '3) 资料里找不到答案时，明确回答「知识库里没有相关信息」，不要猜测；' +
+    '4) 不要写标题，不要在结尾罗列来源。';
+
+  var CLOUD = null, MODEL = null, MODEL_STATE = 'idle', busy = null;
+  /* 提问序号：每次 ask() 递增并捕获进闭包。所有异步恢复点（服务端返回、
+     流式每一帧、失败兜底、finally 释放）都校验它 —— 不等即说明已被更新的
+     提问取代，必须静默丢弃，否则多个流程会互相覆盖 DOM（SPEC-030）。 */
+  var REQ = 0;
+
+  /* 输出上限：不设的话模型可能自由发挥写长文，耗时随之线性增长 */
+  var MAX_OUTPUT_TOKENS = 1024;
+  /* 模型优选：auto 是平台自动路由别名（可能路由到推理型，耗时不可控），推理型会先"想"很久；
+     优先轻量型。名称启发式，命中不了就按原顺序取。 */
+  var SLOW_HINT_RE = /(auto|think|reason|r1\b|o1\b|o3\b|qwq|deepseek-r1)/i;
+  var FAST_HINT_RE = /(flash|lite|turbo|mini|small|fast|haiku)/i;
+
+  function pickModel(list){
+    var usable = (list || []).filter(function(m){ return m && m.disabled !== true; });
+    if(!usable.length) return null;
+    var score = function(m){
+      var n = String((m && (m.name || m.id)) || '').toLowerCase(), s = 0;
+      if(SLOW_HINT_RE.test(n)) s += 100;   // auto 路由 / 推理型：耗时不可控，排后面
+      if(FAST_HINT_RE.test(n)) s -= 40;    // 轻量型优先
+      return s;
+    };
+    var best = usable[0], bs = score(usable[0]);
+    for(var i = 1; i < usable.length; i++){
+      var s = score(usable[i]);
+      if(s < bs){ best = usable[i]; bs = s; }
+    }
+    return best;
+  }
+
+  /* URL 参数 ?model=xxx 强制指定，便于人工对比不同模型的速度 */
+  function forcedModelId(){
+    try{
+      if(typeof location === 'undefined' || !location.search) return '';
+      var m = /[?&]model=([^&#]+)/.exec(location.search);
+      return m ? decodeURIComponent(m[1]) : '';
+    }catch(e){ return ''; }
+  }
+
+  function setAi(t){ var el = document.getElementById('ai'); if(el) el.textContent = t; }
+
+  var MODEL_LIST = [];   // models.list() 的原始返回（含 disabled），供查看与测试读取
+
+  /* 平台不在 chunk 里回填 model，只能把候选清单列出来人工挑选 */
+  function wantModelDump(){
+    try{
+      return typeof location !== 'undefined' && !!location.search && /[?&]models=1(&|#|$)/.test(location.search);
+    }catch(e){ return false; }
+  }
+
+  function dumpModels(list){
+    var lines = (list || []).map(function(m){
+      return (m && (m.id || '?')) + (m && m.name ? '  「' + m.name + '」' : '') + (m && m.disabled ? '  [禁用]' : '');
+    });
+    try{ console.log('[可用模型] ' + lines.length + ' 个\n' + lines.join('\n')); }catch(e){}
+    if(!wantModelDump() || !lines.length) return;   // 不带 ?models=1 或清单为空时页面无感
+    try{
+      var pre = document.createElement('pre');
+      pre.id = 'modelDump';
+      pre.textContent = '可用模型 ' + lines.length + ' 个：\n' + lines.join('\n');
+      var ai = document.getElementById('ai');
+      if(ai && ai.parentNode && ai.parentNode.appendChild) ai.parentNode.appendChild(pre);
+    }catch(e){}
+  }
+
+  function initCloud(){
+    try{
+      if(!window.WorkBuddyCloud) return false;
+      CLOUD = window.WorkBuddyCloud.createWorkBuddyCloud({
+        endpoint: PUBLIC_CONFIG.endpoint,
+        oauthRelayBaseUrl: PUBLIC_CONFIG.oauthRelayBaseUrl,
+        publishableKey: PUBLIC_CONFIG.publishableKey
+      });
+      return !!CLOUD;
+    }catch(e){ CLOUD = null; return false; }
+  }
+
+  function loadModel(){
+    if(!CLOUD || MODEL_STATE !== 'idle') return;
+    MODEL_STATE = 'loading';
+    setAi('大模型：连接中…');
+    Promise.resolve().then(function(){
+      return CLOUD.llm.models.list();
+    }).then(function(list){
+      MODEL_LIST = list || [];
+      dumpModels(MODEL_LIST);
+      var usable = (list || []).filter(function(m){ return m && m.disabled !== true; });
+      if(!usable.length){ MODEL_STATE = 'empty'; setAi('大模型：暂无可用模型（回退本地摘要）'); return; }
+      var forced = forcedModelId();
+      var chosen = null;
+      if(forced){
+        chosen = usable.filter(function(m){ return m && (m.id === forced || m.name === forced); })[0] || null;
+      }
+      MODEL = chosen || pickModel(usable);   // 不再无脑取 usable[0]
+      MODEL_STATE = 'ready';
+      setAi('大模型：' + (MODEL.name || MODEL.id));
+    }).catch(function(){
+      MODEL_STATE = 'error';
+      setAi('大模型：连接失败（回退本地摘要）');
+    });
+  }
+
+  function errText(err){
+    var code = (err && err.error && err.error.code) || '';
+    if(/^auth_/.test(code)) return '页面地址未被授权，云服务仅允许在发布后的线上地址调用';
+    if(/^quota_/.test(code)) return '模型额度已用尽，请稍后再试';
+    if(/^request_/.test(code)) return '请求参数有误，请换个问法';
+    if(/^gateway_|^model_/.test(code)) return '模型服务暂时不可用，请稍后重试';
+    if(/^internal_/.test(code)) return '服务异常' + (err && err.requestId ? '（' + err.requestId + '）' : '');
+    return (err && err.message) ? String(err.message).slice(0,120) : '网络异常';
+  }
+
+  // 把命中的笔记/词条拼成给模型的资料（限长，避免超上下文）
+  function buildContext(rows){
+    var parts = [], budget = 6200;
+    (rows || []).slice(0, 6).forEach(function(row){
+      var d = docs[row.di];
+      if(!d) return;
+      var body = d.kind === 'note'
+        ? d.chunks.map(chunkText).join('\n')
+        : ((d.desc || '') + (d.refs && d.refs.length ? '\n关联笔记：' + d.refs.join('、') : ''));
+      body = body.replace(/\n{2,}/g, '\n').trim();
+      if(body.length > 1500) body = body.slice(0, 1500) + '…';
+      if(body.length > budget) return;
+      budget -= body.length;
+      parts.push('《' + d.title + '》（' + KIND_NAME[d.kind] + '）\n' + body);
+    });
+    return parts.join('\n\n');
+  }
+
+  /* 流式渲染器：同一帧内到达的多个 token 合并成一次 innerHTML 写入。
+     逐字重写整个 innerHTML 是 O(n²)——回答越长，每来一个字的开销越大，长回答会掉帧。
+     按帧合并后，渲染开销只与帧数有关，与 token 数无关。 */
+  /* 轻量 markdown 渲染：在 esc 之后做。顺序很关键 —— 必须先断行再加粗，
+     否则加粗后编号后跟的是 '<'，断行正则的 lookahead 匹配不到。
+     lookahead 允许中/英文与 '*'，是为了让「2. **业务目标**」也能断行。 */
+  function mdLite(s){
+    s = s.replace(/(\s)(\d+)\.\s+(?=[\u4e00-\u9fa5a-zA-Z*])/g, '$1<br>$2. '); // 行内编号前断行
+    s = s.replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');                          // **xxx** → <b>xxx</b>
+    s = s.replace(/\n/g, '<br>');                                            // 换行符 → <br>
+    return s;
+  }
+
+  function streamRenderer(el){
+    var buf = '', pending = false;
+    function paint(caret){
+      if(!el) return;
+      el.innerHTML = '<p class="lead">' + mdLite(esc(buf)) + (caret ? '<span class="caret"></span>' : '') + '</p>';
+    }
+    function schedule(){
+      if(pending) return;
+      pending = true;
+      var run = function(){ pending = false; paint(true); };
+      var raf = (typeof window !== 'undefined' && window.requestAnimationFrame) ? window.requestAnimationFrame : null;
+      if(raf) raf(run); else setTimeout(run, 16);   // 无 rAF 时降级为定时器
+    }
+    return {
+      push: function(t){ if(!t) return; buf += t; schedule(); },
+      finish: function(){ pending = false; paint(false); return buf; },
+      raw: function(){ return buf; }
+    };
+  }
+
+  function streamAnswer(q, ans, seq){
+    var sources = ans.sources || [];
+    var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    var t0 = nowMs();
+    busy = ctrl;
+
+    OUT.innerHTML = traceHtml(ans.trace, ans.ms, '大模型流式作答中…', 'run') +
+      '<div class="card">' +
+      '<div class="kicker">✦ 回答<span class="note" id="genNote">大模型生成中…</span></div>' +
+      '<div id="ansBody"><p class="lead" style="color:var(--dim)">正在检索资料并生成…</p></div>' +
+      sourcesHtml(sources) + '</div>';
+
+    var body = document.getElementById('ansBody');
+    var note = document.getElementById('genNote');
+    var rr = streamRenderer(body);   // 按帧合并渲染，替代逐字重写 innerHTML
+
+    var messages = [
+      { role:'system', content: SYSTEM_PROMPT },
+      { role:'user', content: '【知识库资料】\n' + buildContext(ans.rows) + '\n\n【问题】' + q }
+    ];
+
+    var stream;
+    try{
+      stream = CLOUD.llm.chat.completions.create({
+        model: MODEL.id,
+        messages: messages,
+        stream: true,
+        stream_options: { include_usage: true },
+        temperature: 0.3,
+        max_tokens: MAX_OUTPUT_TOKENS,   // 输出封顶，避免无限生成拖长耗时
+        signal: ctrl ? ctrl.signal : undefined
+      });
+    }catch(err){
+      if(seq !== undefined && seq !== REQ) return;   // 过期请求：不覆盖界面
+      busy = null; renderAnswer(ans, errText(err)); return;
+    }
+
+    (async function(){
+      try{
+        var tFirst = 0, usage = null;
+        for await (var chunk of stream){
+          if(seq !== undefined && seq !== REQ){      // 已被新提问取代 → 停写并中止流
+            try{ if(ctrl) ctrl.abort(); }catch(e){}
+            return;
+          }
+          if(!tFirst) tFirst = nowMs();   // 首字时间：用来区分"等首字慢"还是"吐字慢"
+          var delta = chunk && chunk.choices && chunk.choices[0] && chunk.choices[0].delta;
+          if(delta && delta.content){ rr.push(delta.content); }
+          if(chunk && chunk.usage) usage = chunk.usage;
+        }
+        if(seq !== undefined && seq !== REQ) return;   // 收尾前再确认一次
+        if(!rr.raw()){ renderAnswer(ans, '模型没有返回内容'); return; }
+        rr.finish();   // 正常结束：写入完整内容并去掉光标
+        if(note) note.textContent = '大模型生成 · 依据 ' + sources.length + ' 篇资料';
+        var gd = document.getElementById('trGenD');
+        var tkn = usage ? (' · <b>' + (usage.completion_tokens || usage.total_tokens || '?') + '</b> tokens') : '';
+        if(gd) gd.innerHTML = '大模型流式作答完成 · 依据 <b>' + sources.length + '</b> 篇资料 · 首字 <b>' +
+          (tFirst ? ((tFirst - t0) / 1000).toFixed(1) : '-') + ' s</b> · 用时 <b>' +
+          ((nowMs() - t0) / 1000).toFixed(1) + ' s</b> · 输出 <b>' + rr.raw().length + '</b> 字' + tkn;
+        markGen('');
+      }catch(err){
+        if(seq !== undefined && seq !== REQ) return;             // 过期请求：不覆盖界面
+        if(ctrl && ctrl.signal && ctrl.signal.aborted) return;   // 用户主动停止
+        if(rr.raw()){
+          body.innerHTML = '<p class="lead">' + esc(rr.raw()) + '</p><p class="lead err" style="font-size:13px">生成中断：' + esc(errText(err)) + '</p>';
+          if(note) note.textContent = '生成中断（已保留已生成内容）';
+          var gd2 = document.getElementById('trGenD');
+          if(gd2) gd2.textContent = '生成中断：' + errText(err);
+          markGen('bad');
+        } else {
+          renderAnswer(ans, errText(err));
+        }
+      }finally{ if(seq === undefined || seq === REQ) busy = null; }
+    })();
+  }
+
+  /* ======================= 检索自检（离线评测集） ======================= */
+  /* 规则与离线脚本 tests/eval.js 完全一致：只跑检索，不调用大模型。
+     题目来自 tests/eval_cases.json（由 build/build_eval_cases.js 打包成 eval_cases.js）。 */
+  var EVAL = window.EVAL_CASES || null;
+  var CHK = document.getElementById('chk');
+  var chkBtn = document.getElementById('chkBtn');
+  var CTYPE = { fact:'事实数字型', entity:'专名实体型', concept:'通用概念型', rewrite:'口语化改写型' };
+  var CTYPE_ORDER = ['fact','entity','concept','rewrite'];
+  var TOPK = 5;
+
+  /* 标题规范化：忽略空白，并容忍清洗流水线残留的 [[ ]] 标记 */
+  function normTitle(s){ return String(s).replace(/\[\[|\]\]/g,'').replace(/\s+/g,' ').trim(); }
+  var TNORM = {};
+  docs.forEach(function(d, i){
+    var k1 = normTitle(d.title); if(TNORM[k1] == null) TNORM[k1] = i;
+    if(d.titleRaw){ var k2 = normTitle(d.titleRaw); if(TNORM[k2] == null) TNORM[k2] = i; }
+  });
+  function resolveTitle(t){ var k = normTitle(t); return (TNORM[k] != null) ? TNORM[k] : -1; }
+
+  /* 单题打分：期望文档是否出现在 top-5，以及排第几名 */
+  function scoreCase(c, mode){
+    var want = {};
+    c.expect.forEach(function(t){ var i = resolveTitle(t); if(i >= 0) want[i] = 1; });
+    var rows = [], top = [];
+    try { rows = retrieve(c.q, mode).rows.slice(0, TOPK); } catch(e){ rows = []; }
+    var rank = 0;
+    for(var i = 0; i < rows.length; i++){
+      top.push(docs[rows[i].di].title);
+      if(!rank && want[rows[i].di]) rank = i + 1;
+    }
+    return { id:c.id, type:c.type, q:c.q, expect:c.expect, rank:rank, top:top };
+  }
+  function runEval(mode, cases){
+    return (cases || EVAL.cases).map(function(c){ return scoreCase(c, mode); });
+  }
+  function calcMetrics(per){
+    var n = per.length || 1;
+    return {
+      n: per.length,
+      h1: per.filter(function(p){ return p.rank === 1; }).length,
+      h3: per.filter(function(p){ return p.rank >= 1 && p.rank <= 3; }).length,
+      h5: per.filter(function(p){ return p.rank >= 1 && p.rank <= 5; }).length,
+      mrr: per.reduce(function(a, p){ return a + (p.rank ? 1 / p.rank : 0); }, 0) / n
+    };
+  }
+  function pctStr(v){ return (v * 100).toFixed(1) + '%'; }
+
+  function tileHTML(name, val, desc){
+    return '<div class="tile"><div class="tn">' + name + '</div>' +
+           '<div class="tv">' + val + '</div><div class="tx">' + desc + '</div></div>';
+  }
+  function metricsHTML(m){
+    return '<div class="chk-tiles">' +
+      tileHTML('HIT@1', pctStr(m.h1 / m.n), '正确答案排第 1 名') +
+      tileHTML('HIT@3', pctStr(m.h3 / m.n), '进前三名') +
+      tileHTML('HIT@5', pctStr(m.h5 / m.n), '进前五名') +
+      tileHTML('MRR', m.mrr.toFixed(3), '排序质量 · 满分 1') +
+      '</div>';
+  }
+  function typeTableHTML(per, mAll){
+    var h = '<table class="chk-tbl"><thead><tr>' +
+      '<th>题型</th><th>题数</th><th>Hit@1</th><th>Hit@3</th><th>Hit@5</th><th>MRR</th>' +
+      '</tr></thead><tbody>';
+    CTYPE_ORDER.forEach(function(t){
+      var sub = per.filter(function(p){ return p.type === t; });
+      if(!sub.length) return;
+      var m = calcMetrics(sub);
+      h += '<tr><td>' + CTYPE[t] + '</td><td>' + m.n + '</td><td>' + pctStr(m.h1 / m.n) + '</td>' +
+           '<td>' + pctStr(m.h3 / m.n) + '</td><td>' + pctStr(m.h5 / m.n) + '</td><td>' + m.mrr.toFixed(3) + '</td></tr>';
+    });
+    h += '<tr><td>总体（智能）</td><td>' + mAll.n + '</td><td>' + pctStr(mAll.h1 / mAll.n) + '</td>' +
+         '<td>' + pctStr(mAll.h3 / mAll.n) + '</td><td>' + pctStr(mAll.h5 / mAll.n) + '</td><td>' + mAll.mrr.toFixed(3) + '</td></tr>';
+    return h + '</tbody></table>';
+  }
+  function failsHTML(per){
+    var miss = per.filter(function(p){ return !p.rank; });
+    if(!miss.length) return '<div class="chk-empty">全部 ' + per.length + ' 题都命中了前 5 名。</div>';
+    return '<div class="chk-fails">' + miss.map(function(p){
+      var want = p.expect.slice(0, 2).join(' / ');
+      var got = p.top.length ? p.top.slice(0, 3).join(' / ') : '（无结果）';
+      return '<div class="fail"><div class="fq">' + esc(p.q) + '</div>' +
+             '<div class="fm">应命中：<b>' + esc(want) + '</b>　｜　实际前 3：' + esc(got) + '</div></div>';
+    }).join('') + '</div>';
+  }
+  function chkShell(inner){
+    return '<div class="chk-h"><span class="kicker">检索自检 · 量化评测</span>' +
+      '<button type="button" class="chk-x" id="chkX">收起</button></div>' +
+      '<div class="chk-sub">用 <b>' + (EVAL ? EVAL.cases.length : 0) + '</b> 道标注题逐题跑检索，' +
+      '检查「应命中的原文」有没有进入前 5 名。纯检索指标，<b>不调用大模型</b> —— ' +
+      '判定规则与离线脚本 <b>tests/eval.js</b> 完全一致。</div>' + inner;
+  }
+
+  var chkRunning = false;
+  function runCheck(){
+    chkRunning = true;
+    var total = EVAL.cases.length, per = [], i = 0, CHUNK = 10;
+
+    CHK.innerHTML = chkShell('<div class="chk-prog"><i id="chkBar"></i></div>' +
+      '<div class="chk-empty" id="chkMsg">正在逐题检索…</div>');
+
+    function finish(){
+      chkRunning = false;
+      var m = calcMetrics(per);
+      var miss = per.filter(function(p){ return !p.rank; });
+      CHK.innerHTML = chkShell(
+        metricsHTML(m) +
+        '<div class="chk-sec">分题型（智能模式）</div>' + typeTableHTML(per, m) +
+        '<div class="chk-sec">未命中前 5 名 · ' + miss.length + ' 题</div>' + failsHTML(per) +
+        '<div class="chk-foot">语料：<b>' + docs.length + '</b> 篇（' + D.meta.notes + ' 笔记 / ' +
+        D.meta.entities + ' 实体 / ' + D.meta.concepts + ' 概念）　｜　' +
+        '知识库：<b>' + esc(currentLib() || '默认') + '</b>　｜　' +
+        (SERVER.ready
+          ? '当前链路：<b>服务端三路</b>（关键词 + 实体 + 向量' + (SERVER.rerank ? ' + 重排' : '') + '）'
+          : '当前链路：<b>本地两路</b>（关键词 + 实体）') + '<br>' +
+        '注意：本面板<b>只评测页面内置的两路检索</b>，不反映上面的链路 —— ' +
+        '服务端真实水平请用 <b>node tests/eval_backend.js</b> 测。<br>' +
+        '与离线基线同源同规则，可对照 <b>tests/eval_report.md</b>。</div>'
+      );
+      var bx = document.getElementById('chkX');
+      if(bx) bx.focus();
+    }
+
+    (function step(){
+      var end = Math.min(i + CHUNK, total);
+      for(; i < end; i++) per.push(scoreCase(EVAL.cases[i], 'all'));
+      var bar = document.getElementById('chkBar');
+      var msg = document.getElementById('chkMsg');
+      if(bar) bar.style.width = Math.round(i / total * 100) + '%';
+      if(msg) msg.textContent = '正在逐题检索…　' + i + ' / ' + total;
+      if(i < total){ setTimeout(step, 0); return; }
+      finish();
+    })();
+  }
+
+  function openCheck(){
+    CHK.hidden = false;
+    chkBtn.classList.add('on');
+    if(chkRunning) return;
+    if(!EVAL){
+      CHK.innerHTML = chkShell('<div class="chk-empty">未找到 <b>eval_cases.js</b>。' +
+        '请先在 build/ 目录运行 <b>node build_eval_cases.js</b> 生成，再刷新本页。</div>');
+      return;
+    }
+    runCheck();
+  }
+
+  chkBtn.addEventListener('click', function(){
+    if(!CHK.hidden){
+      CHK.hidden = true; chkBtn.classList.remove('on');
+    } else {
+      openCheck();
+    }
+  });
+  CHK.addEventListener('click', function(e){
+    if(e.target.closest('#chkX')){ CHK.hidden = true; chkBtn.classList.remove('on'); }
+  });
+
+  /* ======================= 事件 ======================= */
+  document.getElementById('askForm').addEventListener('submit', function(e){
+    e.preventDefault(); ask();
+  });
+
+  document.getElementById('modes').addEventListener('click', function(e){
+    var b = e.target.closest('.mode'); if(!b) return;
+    state.mode = b.dataset.mode;
+    Array.prototype.forEach.call(this.children, function(x){ x.classList.toggle('on', x === b); });
+    document.getElementById('hint').textContent = HINT[state.mode] || '';
+    if(state.q) ask();
+  });
+
+  document.getElementById('libbox').addEventListener('click', function(e){
+    var b = e.target.closest('.lib'); if(!b) return;
+    switchLib(b.getAttribute('data-db'));   // 切库 → 清空当前问答（Q4）
+  });
+
+  OUT.addEventListener('click', function(e){
+    var tb = e.target.closest('.trybtn');
+    if(tb){ input.value = tb.getAttribute('data-try'); ask(); input.focus(); return; }
+
+    var th = e.target.closest('.trace-h');
+    if(th){
+      var box = th.parentNode;
+      if(box && box.classList) box.classList.toggle('closed');
+      return;
+    }
+
+    var src = e.target.closest('.src');
+    if(!src) return;
+    var wrap = src.parentNode;
+    var exc = wrap.querySelector('.exc');
+    var open = wrap.classList.toggle('open');
+    if(open){
+      if(!exc.innerHTML) exc.innerHTML = excerptHtml(+src.getAttribute('data-di'));
+      exc.hidden = false;
+    } else {
+      exc.hidden = true;
+    }
+  });
+
+  document.addEventListener('keydown', function(e){
+    if(e.key === '/' && document.activeElement !== input){ e.preventDefault(); input.focus(); }
+    if(e.key === 'Escape'){ input.value=''; state.q=''; renderIdle(); }
+  });
+
+  /* ======================= 启动 ======================= */
+  document.getElementById('stat').textContent =
+    D.meta.notes + ' 篇笔记 · ' + D.meta.terms + ' 个词条 · ' +
+    (D.meta.chars/10000).toFixed(1) + ' 万字语料';
+
+  /* 调试出口（自测脚本用） */
+  window.__KB__ = {
+    state: state, docs: docs, terms: D.terms, aliases: D.aliases, meta: D.meta,
+    retrieve: retrieve, answer: composeAnswer, ask: ask,
+    renderIdle: renderIdle, highlight: highlight, tokens: tokens, units: sentenceUnits,
+    context: buildContext, errText: errText, config: PUBLIC_CONFIG,
+    streamRenderer: streamRenderer, pickModel: pickModel,
+    modelInfo: function(){ return MODEL ? { id: MODEL.id, name: MODEL.name } : null; },
+    modelList: function(){ return MODEL_LIST; },
+    cloudState: function(){ return MODEL_STATE; },
+    html: function(){ return OUT.innerHTML; },
+    /* 知识库切换（SPEC-033） */
+    switchLib: switchLib, currentLib: currentLib, libs: function(){ return LIBS; },
+    /* 检索自检（只跑检索，不调大模型）：返回逐题结果与指标，供自测脚本校验 */
+    selfcheck: function(mode){
+      mode = mode || 'all';
+      if(!EVAL) return null;
+      var per = runEval(mode);
+      return {
+        mode: mode,
+        metrics: calcMetrics(per),
+        byType: CTYPE_ORDER.reduce(function(o, t){
+          var sub = per.filter(function(p){ return p.type === t; });
+          if(sub.length) o[t] = calcMetrics(sub);
+          return o;
+        }, {}),
+        perCase: per,
+        cases: EVAL.cases.length
+      };
+    }
+  };
+
+  renderIdle();
+
+  /* 初始化云服务大模型（失败则静默降级为本地摘要） */
+  if(initCloud()){ loadModel(); }
+  else { setAi('本地摘要模式（大模型不可用）'); }
+};
+
+/* 按 ?db= 载入对应知识库数据，就绪后启动页面。
+   注意：默认库同样走这里加载 —— 静态 <script src="data.js"> 已移除，
+   少了这一步 window.WIKI_DATA 就是 undefined，页面会报「未找到 data.js」。*/
+(function(){
+  var started = false;
+  function start(){
+    if(started) return;
+    started = true;
+    window.__KB_START__();
+  }
+  /* 数据已就位就立即启动。自测脚手架是把 data.js 直接 eval 注入 window 的，
+     而 mock DOM 的 appendChild 是空函数 —— 走 <script> 异步加载那条路
+     onload 永远不会触发，页面就起不来。 */
+  if(window.WIKI_DATA){ start(); return; }
+
+  var DB = '';
+  try { DB = new URLSearchParams(location.search).get('db') || ''; } catch(e){}
+  var file = (!DB || DB === 'worldcup') ? 'data.js' : ('data-' + DB + '.js');
+  if(typeof document.createElement !== 'function'){ start(); return; }
+  function inject(src, onErr){
+    var t = document.createElement('script');
+    t.src = src;
+    t.onload = start;
+    t.onerror = onErr || start;
+    document.head.appendChild(t);
+  }
+  inject(file, function(){
+    // 指定库的数据缺失 → 回退默认库；默认库也没有就让页面自己报「数据缺失」
+    if(file === 'data.js') start();
+    else inject('data.js');
+  });
+})();
+</script>
+</body>
+</html>

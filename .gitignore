@@ -1,0 +1,40 @@
+# ============================================================
+# 世界杯数据库查询 - 多知识库 RAG 问答系统
+# 公开仓库：只追踪「代码 + 工程文档」，数据/模型/笔记均不上传
+# ============================================================
+
+# ---- 模型权重（HuggingFace 可重新下载，且单文件超 GitHub 100MB 硬限）----
+检索页/vector/models/
+**/*.safetensors
+**/*.onnx
+**/*.onnx.data
+**/*.bin
+**/*.pth
+**/*.gguf
+
+# ---- 运行时产物目录（索引 / 向量 / 文档导出，均可由 build 脚本重建）----
+检索页/vector/
+
+# ---- 知识数据与笔记（含企业/客户内部文档，公开仓库不传）----
+检索页/data/
+LLM Wiki/
+检索页/data-enterprise.js
+检索页/data-xiaohongshu.js
+检索页/data.js
+
+# ---- Python / Node / 编辑器 / 系统 ----
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+node_modules/
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# ---- 环境变量与密钥 ----
+.env
+.env.*
+!.env.example
