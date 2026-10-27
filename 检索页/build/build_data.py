@@ -1,20 +1,23 @@
 # -*- coding: utf-8 -*-
 """
-build_data.py — 把 E:\课件\练习 知识库编译成检索页数据
+build_data.py — 把 Obsidian 知识库编译成检索页数据（data.js）
 
-输入：
-  E:/课件/练习/Cleaned/*.md      72 篇笔记
-  E:/课件/练习/entity/*.md       62 个实体节点页
-  E:/课件/练习/concept/*.md      14 个概念节点页
-  E:/课件/练习/index.md          分类导航（词条/笔记的分组）
-  F:/世界杯数据库查询/LLM Wiki/LLM Wiki/3、世界杯/Wiki/index.md   别名表（cr7 → C罗 等）
+默认读写「当前库」：<检索页>/data/worldcup/ → <检索页>/data.js。
+路径一律基于脚本自身位置推算，不含任何本机绝对路径；换库用 --root / --out / --tpl 覆盖。
+
+输入（<ROOT> = 知识库目录）：
+  <ROOT>/Cleaned/*.md      笔记正文
+  <ROOT>/entity/*.md       实体节点页
+  <ROOT>/concept/*.md      概念节点页
+  <ROOT>/index.md          分类导航（词条/笔记的分组）
+  <ROOT>/aliases.md        别名表（可选，cr7 → C罗 等；不存在则跳过）
 
 输出：
-  E:/课件/检索页/data.js         window.WIKI_DATA = {...}
+  <检索页>/data.js         window.WIKI_DATA = {...}
 
 设计：
   - 不做向量（预留 chunks 结构，未来加向量只需给 chunk 补 embedding 字段）
-  - 倒排索引由前端启动时即时构建（148 个文档、二十余万字，几十毫秒的事）
+  - 倒排索引由前端启动时即时构建
   - data.js 用 <script src> 引入，file:// 双击即可用，不依赖本地服务
 """
 import os
@@ -23,10 +26,14 @@ import json
 import glob
 import datetime
 
-# 默认值保持原有行为（世界杯库）；SPEC-033 起可用 --root / --out / --tpl 覆盖
-DEFAULT_ROOT = r"E:/课件/练习"
-DEFAULT_OUT = r"F:/世界杯数据库查询/检索页/data.js"
-DEFAULT_TPL = r"F:/世界杯数据库查询/LLM Wiki/LLM Wiki/3、世界杯/Wiki/index.md"
+# ---- 路径基准：一律基于脚本位置推算，便于他人 clone 后直接运行 ----
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))   # <检索页>/build
+APP_DIR = os.path.dirname(SCRIPT_DIR)                      # <检索页>
+
+# 默认值（当前库 = worldcup）；SPEC-033 起可用 --root / --out / --tpl 覆盖
+DEFAULT_ROOT = os.path.join(APP_DIR, "data", "worldcup")
+DEFAULT_OUT = os.path.join(APP_DIR, "data.js")
+DEFAULT_TPL = os.path.join(APP_DIR, "data", "worldcup", "aliases.md")
 
 ROOT = DEFAULT_ROOT
 OUT_FILE = DEFAULT_OUT

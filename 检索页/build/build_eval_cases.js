@@ -7,7 +7,7 @@
  *
  * 运行：node build/build_eval_cases.js
  * 输入：tests/eval_cases.json
- * 输出：E:/课件/检索页/eval_cases.js   →   window.EVAL_CASES = {...}
+ * 输出：<检索页>/eval_cases.js   →   window.EVAL_CASES = {...}
  */
 const fs = require('fs');
 const path = require('path');

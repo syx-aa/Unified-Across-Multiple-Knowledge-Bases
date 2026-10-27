@@ -230,7 +230,7 @@ def build_index(ent_names, con_names, notes, out_dir):
 
 def main():
     ap = argparse.ArgumentParser(description="清洗知识库 Raw/ → 标准结构")
-    ap.add_argument("lib", help="库目录，如 F:/世界杯数据库查询/LLM Wiki/LLM Wiki/4、企业内部项目文档")
+    ap.add_argument("lib", help="知识库目录，相对或绝对路径均可，如 data/worldcup")
     ap.add_argument("--out", default=None, help="输出目录，默认 <库>/Cleaned_DB")
     args = ap.parse_args()
 

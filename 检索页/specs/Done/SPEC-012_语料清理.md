@@ -21,7 +21,7 @@
 | 用例 | 命令 / 位置 | 期望 |
 |---|---|---|
 | TC1 效果对比 | `node tests/compare_baselines.js eval_baseline_dirty.json eval_baseline_clean.json` | 输出涨跌 |
-| TC2 回滚 | `E:\课件\_backup_练习_20261011\` | 备份存在 |
+| TC2 回滚 | `_backup/` 语料备份目录 | 备份存在 |
 
 ## 4. 实现
 
@@ -29,7 +29,7 @@
 |---|---|---|
 | [`build/build_data.py`](../../build/build_data.py#L30) | 第 30 行 `MIN_SIZE = 30` | 小于 30 字节的占位文件直接跳过 |
 | [`build/build_data.py`](../../build/build_data.py#L51-L53) | `md_files()` 51 | 按体积过滤语料 |
-| 语料目录 | `E:\课件\练习\_archived\` | 归档噪音（项目外） |
+| 语料目录 | `data/worldcup/_archived/` | 归档噪音 |
 
 ## 5. 验证结果
 

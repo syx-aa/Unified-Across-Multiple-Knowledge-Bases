@@ -2,7 +2,34 @@
 chcp 65001 >nul
 cd /d "%~dp0"
 
-set "PY=C:\Users\24504\.workbuddy\binaries\python\versions\3.14.3\python.exe"
+rem ===== Python 解释器探测 =====
+rem 若自动探测失败，取消下面这行的注释并把路径改成你的 python.exe
+rem set "PY=C:\Python313\python.exe"
+
+set "PY="
+if not defined PY call :detect "py -3"
+if not defined PY call :detect "python"
+if not defined PY call :detect "python3"
+
+if not defined PY (
+    echo [错误] 未检测到可用的 Python。
+    echo.
+    echo 请二选一：
+    echo   1. 安装 Python 3.11+ 并勾选 Add Python to PATH，然后重新双击本脚本
+    echo   2. 记事本打开本脚本，取消上面第 8 行的注释并改成你的 python.exe 路径
+    echo.
+    pause
+    exit /b 1
+)
+goto :main
+
+rem 实际执行一次来确认可用，避开 Microsoft Store 的 python 假存根
+:detect
+%~1 -c "import sys" >nul 2>nul
+if not errorlevel 1 set "PY=%~1"
+goto :eof
+
+:main
 set "URL=http://127.0.0.1:8765/"
 
 echo ==========================================

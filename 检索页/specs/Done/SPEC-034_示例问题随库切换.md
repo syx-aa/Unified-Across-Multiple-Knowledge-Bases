@@ -57,7 +57,7 @@ var EXAMPLES = [
 
 | 文件 | 位置 | 说明 |
 |---|---|---|
-| `E:/课件/练习/examples.txt` | 新增 | 世界杯库示例 5 条（沿用原 `EXAMPLES`） |
+| `data/worldcup/examples.txt` | 新增 | 世界杯库示例 5 条（沿用原 `EXAMPLES`） |
 | `data/enterprise/examples.txt` | 新增 | 企业库示例 6 条（负责人确认） |
 | [`build/build_data.py`](../../build/build_data.py) | `load_examples()` | 新增：按行读取，跳过空行与 `#` 注释 |
 | [`build/build_data.py`](../../build/build_data.py) | `payload["meta"]` | 新增 `examples` 字段 |
