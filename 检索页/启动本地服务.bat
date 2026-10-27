@@ -4,7 +4,7 @@ cd /d "%~dp0"
 
 rem ===== Python 解释器探测 =====
 rem 若自动探测失败，取消下面这行的注释并把路径改成你的 python.exe
-rem set "PY=C:\Python313\python.exe"
+rem set "PY=你的 python.exe 完整路径"
 
 set "PY="
 if not defined PY call :detect "py -3"
